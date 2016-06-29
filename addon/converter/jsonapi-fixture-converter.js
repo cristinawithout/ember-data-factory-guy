@@ -12,10 +12,15 @@ class JSONAPIFixtureConverter extends Converter {
 
   constructor(store, options = { transformKeys: true, serializeMode: false }) {
     super(store, options);
-    this.typeTransformFn = this.serializeMode ? pluralize : this.noTransformFn;
+    this.typeTransformFn = this.serializeMode ? this.typeTransformViaSerializer : this.noTransformFn;
     this.defaultKeyTransformFn = dasherize;
     this.polymorphicTypeTransformFn = dasherize;
     this.included = [];
+  }
+
+  typeTransformViaSerializer(modelName) {
+      let serializer = this.store.serializerFor(modelName);
+      return serializer.payloadKeyFromModelName(modelName);
   }
 
   emptyResponse(_, options={}) {
@@ -65,6 +70,20 @@ class JSONAPIFixtureConverter extends Converter {
     }
   }
 
+//  normalizeAssociation(record, relationship) {
+//    if (Ember.typeOf(record) === 'object') {
+//      let serializer = this.store.serializerFor(relationship.type);
+//      if (relationship.options.polymorphic) {
+//        return { type: serializer.payloadKeyFromModelName(record.type), id: record.id };
+//      } else {
+//        return { type: serializer.payloadKeyFromModelName(record.type), id: record.id };
+//      }
+//    } else {
+//      let serializer = this.store.serializerFor(record.constructor.modelName);
+//      return { type: serializer.payloadKeyFromModelName(record.constructor.modelName), id: record.id };
+//    }
+//  }
+
   isEmbeddedRelationship(/*modelName, attr*/) {
     return false;
   }
@@ -93,6 +112,22 @@ class JSONAPIFixtureConverter extends Converter {
     }
     return data;
   }
+
+//  convertSingle(modelName, fixture) {
+//    let serializer = this.store.serializerFor(modelName);
+//    let data = {
+//      type: serializer.payloadKeyFromModelName(modelName),
+//      attributes: this.extractAttributes(modelName, fixture),
+//    };
+//
+//    this.addPrimaryKey(modelName, data, fixture);
+//
+//    let relationships = this.extractRelationships(modelName, fixture);
+//    if (Object.getOwnPropertyNames(relationships).length > 0) {
+//      data.relationships = relationships;
+//    }
+//    return data;
+//  }
 
   /*
    Add the model to included array unless it's already there.
